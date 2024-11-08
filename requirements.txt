@@ -1,0 +1,22 @@
+torch==2.4.0
+torchvision==0.19.0
+onnxruntime-gpu==1.18.0
+opencv-python
+pandas
+matplotlib
+seaborn
+gdown
+scipy
+tensorboard
+easydict
+pycocotools
+cython
+fastapi==0.115.0
+uvicorn==0.31.0
+python-multipart
+loguru
+#======================yolov8
+psutil
+ultralytics==8.2.35
+# =====================peewee
+peewee

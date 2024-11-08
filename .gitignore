@@ -1,3 +1,8 @@
+# Auto generate directory or large size directory
+output/
+weights/
+log/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
