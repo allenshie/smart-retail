@@ -6,15 +6,15 @@ from src.views.view import View
 if __name__ == "__main__":
     salesAreaDetection = SalesAreaDetection()
     view = View()
-    video_dir_path = '/home/allen/Documents/project/smart_retail/data/videos'
-    video_file_name = '20241103185500_CAM06.mp4'
+    video_dir_path = '/home/allen/Documents/project/smart_retail_space/data/videos/promotion'
+    video_file_name = 'cam4.mp4'
     cameraId = 'camera_test1'
     source = os.path.join(video_dir_path, video_file_name)
     ROIs_info = [
     {
         "id": "area_1",
         "name": "Promotion Area 1",
-        "position": [ [ 451.223880597015, 937.1940298507463 ], [ 2421.373134328358, 937.1940298507463 ], [ 2421.373134328358, 1813.313432835821 ], [ 451.223880597015, 1813.313432835821 ]]
+        "position": [[10.223880597015, 550.1940298507463 ], [ 1950.373134328358, 550.1940298507463 ], [ 1950.373134328358, 1813.313432835821 ], [ 10.223880597015, 1813.313432835821 ]]
     }, ]
     
     # source = 'rtmp://192.168.1.99/store_streaming/livestream'
@@ -37,7 +37,7 @@ if __name__ == "__main__":
                 cameraId=cameraId, image=frame, ROIs_info=ROIs_info, record_mode=False)
             
             zones = [roi for _, roi in ROIs.items()]    
-                    
+            print(f'出現人員數量： {len(persons)}')
             view.visualSalesArea(image=frame, persons=persons, objects_dict=object_dict,
                                  zones=zones, interactiveAreas=interactiveAreas)
 

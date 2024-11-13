@@ -8,7 +8,7 @@ fastsam_context = Context(
 person_context = Context(
     model_name='Person',
     model_dir='weights',
-    model_file='yolov8m-pose.pt',
+    model_file='person_topview_yolov8m_v0.pt',
     threshold=0.5
 )
 reid_context = Context(
