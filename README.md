@@ -8,6 +8,10 @@
 
 如果要輸出通報當前影像，請在 `config.py` 檔內將 `RECORD_MODE` 設定為 `True`。在此之前，請確認專案內是否有 `output` 資料夾。如果沒有，則須創建該資料夾。
 
+## 權重檔案下載
+
+您可以從以下連結下載權重檔案：[下載權重檔案](https://onedrive.live.com/?id=3064F1276B330D0C%211418004&cid=3064F1276B330D0C)
+
 ## Docker 部署
 
 1. **建立 Docker 映像**：在部署服務前，須先在本機端創建 Docker image，使用指令：
