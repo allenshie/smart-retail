@@ -10,7 +10,7 @@
 
 ## 權重檔案下載
 
-您可以從以下連結下載權重檔案：[下載權重檔案](https://onedrive.live.com/?id=3064F1276B330D0C%211418004&cid=3064F1276B330D0C)
+您可以從以下連結下載權重檔案：[下載權重檔案](https://1drv.ms/f/s!AgwNM2sn8WQw1sYU3Agkaau-WwTTEQ?e=l35THC)
 
 ## Docker 部署
 
