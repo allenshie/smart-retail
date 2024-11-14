@@ -31,7 +31,7 @@ if __name__ == "__main__":
         
   
     cap = cv2.VideoCapture(source)
-    videoWrite = VideoWriteService(cap=cap, output_path=os.path.join("output", 'promotion', os.path.basename(source)))
+    # videoWrite = VideoWriteService(cap=cap, output_path=os.path.join("output", 'promotion', os.path.basename(source)))
     while 1:
         ret, frame = cap.read()
         if ret:
@@ -39,13 +39,12 @@ if __name__ == "__main__":
                 cameraId=cameraId, image=frame, ROIs_info=ROIs_info, record_mode=False)
             
             zones = [roi for _, roi in ROIs.items()]    
-            # if len(persons)>2:
-            #     print(persons); cv2.waitKey(0)
+
             view.visualSalesArea(image=frame, persons=persons, objects_dict=object_dict,
                                  zones=zones, interactiveAreas=interactiveAreas)
 
             # cv2.imshow("frame", frame)
-            videoWrite.write(frame=frame)
+            # videoWrite.write(frame=frame)
             cv2.imshow("frame", cv2.resize(frame, (1920, 1080)))
 
             if cv2.waitKey(1) & 0xFF==ord('q'):
