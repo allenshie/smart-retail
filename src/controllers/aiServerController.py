@@ -1,11 +1,8 @@
 import cv2
-import time
-import json
 import requests
-import numpy as np
 from typing import List, Tuple
 from fastapi import APIRouter, HTTPException
-from fastapi import  HTTPException, Body, File, Form, UploadFile
+from fastapi import  HTTPException, Body
 from pydantic import BaseModel, Field
 from src.config.database import initialize_database
 from src.config.config import GetCameraInfoENDPOINT, RECORD_MODE
@@ -13,7 +10,6 @@ from src.services.lib.loggingService import log
 from src.services.lib.threadManager import ThreadManager
 from src.services.detect.experienceAreaDetection import ExperienceAreaDetection
 from src.services.detect.salesAreaDetection import SalesAreaDetection
-
 
 class SalesAreaRequest(BaseModel):
     action: str = Field(..., description="三種動作請求: start (啟動), update (更新), stop (停止)")
@@ -171,20 +167,22 @@ class AIServerAPI:
             return
 
         # 提取 RTSP URL 和相機 ID
-        captures = [cv2.VideoCapture(info['meta']['rtsp_url']) for info in experience_area_info.values()]
-
+        captures = {cameraId: cv2.VideoCapture(info['meta']['rtsp_url']) for cameraId, info in experience_area_info.items()}
         while not stop_event.is_set():
-            for i, cap in enumerate(captures):
+            for cameraId, cap in captures.items():
                 ret, frame = cap.read()
+                
                 if ret:
-                    cameraId = list(experience_area_info.keys())[i]  # 獲取相機 ID
                     log.info(f"體驗區-相機編號：{cameraId} 監控中...")
                     chairs, pillows, persons = self.experienceAreaDetection.detect(cameraId=cameraId, image=frame)
-                    
-                    # 從資料庫中獲取該攝像頭的椅子數據
                     self.experienceAreaDetection.process_chairs(chair_status_history=chair_status_history)
+        
                 else:
-                    print('未獲取影像')
+                    log.info(f"未獲取影像，相機編號：{cameraId} 嘗試重新連接...")
+                    cap.release()
+                    cap = cv2.VideoCapture(experience_area_info[cameraId]['meta']['rtsp_url'])
+                    captures[cameraId] = cap
+                    
         print("線程接收到停止信號，已退出。")
     
     def salesArea_task(self, stop_event):
@@ -192,18 +190,22 @@ class AIServerAPI:
         if not promotion_area_info:
             print("未能獲取促銷區相機資訊，請檢查服務狀態。")
             return
-        captures = [cv2.VideoCapture(info['meta']['rtsp_url']) for info in promotion_area_info.values()]
-
+        captures = {cameraId: cv2.VideoCapture(info['meta']['rtsp_url']) for cameraId, info in promotion_area_info.items()}
         while not stop_event.is_set():
-            for i, cap in enumerate(captures):
+            for cameraId, cap in captures.items():
                 ret, frame = cap.read()
+                
                 if ret:
-                    cameraId = list(promotion_area_info.keys())[i]
-                    ROIs_info = promotion_area_info[cameraId]['area_list']
                     log.info(f"促銷區-相機編號：{cameraId} 監控中...")
+                    ROIs_info = promotion_area_info[cameraId]['area_list']
                     object_list, persons, ROIs, interactiveAreas = self.salesAreaDetection.detect(cameraId=cameraId, 
-                                                                    image=frame, ROIs_info=ROIs_info, record_mode=RECORD_MODE)
-
+                                                        image=frame, ROIs_info=ROIs_info, record_mode=RECORD_MODE)
+                else:
+                    log.info(f"未獲取影像，相機編號：{cameraId} 嘗試重新連接...")
+                    cap.release()
+                    cap = cv2.VideoCapture(promotion_area_info[cameraId]['meta']['rtsp_url'])
+                    captures[cameraId] = cap
+                    
         print("線程接收到停止信號，已退出。")
         
         

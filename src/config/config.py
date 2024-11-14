@@ -36,6 +36,8 @@ pillow_context = Context(
 DATABASE_FILE = 'smart_retail.db'
 LOGPATH='log'
 RECORD_MODE = False #是否錄下通報前後20秒影像
+PRODUCT_WINDOW_SIZE = 30 # 時間序列長度，用來觀察物件是否穩定存在
+PRODUCT_MIN_AVG_APPEARANCE = 0.7 # 商品出現比例閾值（小於該值會過濾）
 PRODUCT_AREA_THRES = 10000 # 物件面積閾值(小於該值會過濾)
 PRODUCT_NO_EXIST_THRES = 10 #(物件消失時間門檻值，超時就會通報)
 

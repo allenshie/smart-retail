@@ -1,13 +1,10 @@
 import time
-import requests
 import numpy as np
 from src.config.config import *
-from src.utils.utils import utils
 from src.services.decorator.decorator import  time_logger
 from src.services.detect.salesArea.salesUtils import SalesUtils
 from src.services.detect.salesArea.cameraContext import CameraContext
 from src.services.detect.salesArea.detection_service import DetectionService
-# from src.services.track.personTracker import PersonAreaTracker
 from src.services.track.areaInteractionMonitor import AreaInteractionMonitor
 from src.services.track.objectTracker import ObjectTracker
 from src.services.video.RecordingService import RecordingService
@@ -15,7 +12,9 @@ from src.views.view import View
 
 class SalesAreaDetection:
     def __init__(self, not_exist_thres: int=PRODUCT_NO_EXIST_THRES):
-        self.object_tracker = ObjectTracker(min_area=PRODUCT_AREA_THRES)
+        self.object_tracker = ObjectTracker(window_size=PRODUCT_WINDOW_SIZE, 
+                                            min_avg_appearance=PRODUCT_MIN_AVG_APPEARANCE, 
+                                            min_area=PRODUCT_AREA_THRES)
         self.sale_utils = SalesUtils()
         self.view = View()
         self.detection_service = DetectionService(

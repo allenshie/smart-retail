@@ -64,9 +64,9 @@ class DetectionService(BaseDetection):
 
     def getReidModel(self, cameraId: str):
         if cameraId not in self.reid_model_dict:
-            reid_model = ReID(context=self.reid_context)
             self.reid_model_dict.update({
-                cameraId: {"person": reid_model, "sam": reid_model}
+                cameraId: {"person": ReID(context=self.reid_context), 
+                           "sam": ReID(context=self.reid_context)}
             })
         return self.reid_model_dict.get(cameraId)
 
