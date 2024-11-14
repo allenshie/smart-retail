@@ -5,6 +5,12 @@ fastsam_context = Context(
     model_file='FastSAM-x.pt',
     threshold=0.5
 )
+experience_person_context = Context(
+    model_name='Person',
+    model_dir='weights',
+    model_file='yolov8m-pose.pt',
+    threshold=0.5
+)
 person_context = Context(
     model_name='Person',
     model_dir='weights',
