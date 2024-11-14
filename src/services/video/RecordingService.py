@@ -6,7 +6,7 @@ from collections import deque
 class RecordingService:
     def __init__(self, fps=30, pre_seconds=20, post_seconds=10, output_dir: str='output'):
         if not os.path.exists(output_dir):
-            os.mkdir(output_dir)
+            os.makedirs(output_dir)
         self.output_dir = output_dir
         self.fps = fps
         self.pre_frames = pre_seconds * fps

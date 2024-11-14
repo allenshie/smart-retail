@@ -13,7 +13,7 @@ class ExperienceAreaDetection:
         self.detection_service = DetectionService(
             chair_context=chair_context,
             pillow_context=pillow_context,
-            person_context=experience_person_context,
+            person_context=pose_person_context,
             reid_context=reid_context
         )
         self.chair_manager = ChairManager()
