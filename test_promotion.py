@@ -8,7 +8,7 @@ if __name__ == "__main__":
     salesAreaDetection = SalesAreaDetection()
     view = View()
     video_dir_path = '/home/allen/Documents/project/smart_retail_space/data/videos/promotion'
-    video_file_name = 'cam6.mp4'
+    video_file_name = 'cam4.mp4'
     cameraId = 'camera_test1'
     source = os.path.join(video_dir_path, video_file_name)
     ROIs_info = [
