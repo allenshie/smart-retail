@@ -1,3 +1,4 @@
+import cv2
 import time
 import numpy as np
 from src.config.config import *
@@ -36,7 +37,11 @@ class SalesAreaDetection:
     
     def get_recording_service(self, cameraId: str):
         if cameraId not in self.recording_services:
-            self.recording_services[cameraId] = RecordingService(output_dir=PROMOTION_OUTPUT_DIR)
+            self.recording_services[cameraId] = RecordingService(
+                                                    fps=RECORD_FPS,
+                                                    pre_seconds=RECORD_PRETIME,
+                                                    post_seconds=RECORD_POSTTIME,
+                                                    output_dir=PROMOTION_OUTPUT_DIR)
         return self.recording_services[cameraId]
 
     @time_logger
@@ -90,4 +95,12 @@ class SalesAreaDetection:
             if record_mode:
                 recording_service = self.get_recording_service(cameraId=cameraId)
                 recording_service.start_recording(cameraId)
-        
+                
+    def visual(self, cameraId, image, persons):
+        camera_context = self.get_camera_context(cameraId=cameraId)
+        ROIs = camera_context.roi_info_dict
+        zones = [roi for _, roi in ROIs.items()]
+        self.view.visualSalesArea(image=image, persons=persons, objects_dict=camera_context.objects_dict,
+                                    zones=zones, interactiveAreas=self.max_area_bboxs_dict.get(cameraId, [])
+                                    )
+        cv2.imshow(cameraId, cv2.resize(image, (1440, 960))); cv2.waitKey(1)

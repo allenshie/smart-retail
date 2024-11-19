@@ -1,3 +1,4 @@
+import cv2
 import time
 import requests
 import numpy as np  
@@ -7,6 +8,7 @@ from src.services.decorator.decorator import time_logger
 from src.services.database.ChairService import ChairService
 from src.services.detect.experienceArea.detection_service import DetectionService
 from src.services.detect.experienceArea.chair_manager import ChairManager
+from src.views.view import View
 
 class ExperienceAreaDetection:
     def __init__(self) -> None:
@@ -17,6 +19,7 @@ class ExperienceAreaDetection:
             reid_context=reid_context
         )
         self.chair_manager = ChairManager()
+        self.view = View()
         self.product_dict = {
             "hands": "product_1",
             "pinto": "product_2", 
@@ -95,7 +98,7 @@ class ExperienceAreaDetection:
 
         return False  # 如果沒有任何交集，返回 False
 
-    def process_chairs(self, chair_status_history):
+    def process_chairs(self, chair_status_history: dict, products_of_interest: list):
         """
         處理椅子的狀態變更，並在狀態變更時通報外部API。
         """
@@ -113,22 +116,23 @@ class ExperienceAreaDetection:
 
             # 如果狀態變為 is_use，進行通報
             if current_state == 'in_use' and (previous_state is None or previous_state != 'in_use'):
-                self.notify_external_api(chair_type=chair_type, camera_id=camera_id, is_using=True)
+                self.notify_external_api(chair_type=chair_type, camera_id=camera_id, is_using=True, products_of_interest=products_of_interest)
                 # time.sleep(5)
                     
             # 如果狀態從 is_use 變為 idle，進行通報
             elif current_state == 'idle' and previous_state == 'in_use':
-                self.notify_external_api(chair_type=chair_type, camera_id=camera_id, is_using=False)
+                self.notify_external_api(chair_type=chair_type, camera_id=camera_id, is_using=False, products_of_interest=products_of_interest)
                 # time.sleep(5)
 
             # 更新椅子的狀態記錄
             chair_status_history[unique_key] = current_state
 
-    def notify_external_api(self, chair_type, camera_id, is_using):
+    def notify_external_api(self, chair_type, camera_id, is_using, products_of_interest):
         """
         通報外部API，報告椅子的狀態變更。
         """
-        if self.product_dict.get(chair_type):
+        # if self.product_dict.get(chair_type):
+        if chair_type in products_of_interest:
             
             payload = {
                 'camera_id': camera_id,
@@ -145,3 +149,11 @@ class ExperienceAreaDetection:
                     print(f"Failed to send notification for camera {camera_id} and chair {chair_type}")
             except Exception as e:
                 print(f"Error sending notification: {e}")
+                
+                
+    def visual(self, cameraId, image, pillows, persons):
+        self.view.visualExperienceArea(image=image, pillows=pillows, 
+                                    chair_db=ChairService.get_camera_chairs(camera_id=cameraId),
+                                    persons=persons
+                                    )
+        cv2.imshow(cameraId, cv2.resize(image, (1440, 960))); cv2.waitKey(1)

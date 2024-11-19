@@ -80,4 +80,4 @@ app.include_router(aiServerController.router)
 # 啟動應用的方式
 if __name__ == "__main__":
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=65333)

@@ -43,7 +43,7 @@ class View:
         rectColor = (0,0,255) if  state== 'in_use' else (0, 155, 0)
         self.drawObject(image=image, object=chair, text=text, rectColor=rectColor)
         
-    def visualSalesArea(self, image: np.recarray, persons: list, objects_dict: dict, zones: list, 
+    def visualSalesArea(self, image: np.ndarray, persons: list, objects_dict: dict, zones: list, 
                         interactiveAreas: list):
         for zone in zones:
             cv2.rectangle(image, zone[:2], zone[2:], (233, 189, 222), 3)
@@ -59,5 +59,23 @@ class View:
             rectColor = (0,0,255) if info.get('notified') else (255,0,0)
             self.drawObject(image=image, object=object, rectColor=rectColor)
         
+    def visualExperienceArea(self, image: np.ndarray, pillows, chair_db, persons):
+        history_chairs = []
+        for chair in chair_db:
+            history_chairs.append({
+                "category": "chair",
+                "id": chair.chair_id,
+                "bbox": eval(chair.position),
+                "state": chair.state,
+                "type": chair.type
+            })
         
+        for chair in history_chairs:
+            self.drawChair(image=image, chair=chair)
         
+        for pillow in pillows:
+            self.drawObject(image=image, object=pillow, rectColor=(0,0,255))
+        
+        for person in persons:
+            self.drawObject(image=image, object=person, rectColor=(255, 0, 0))
+    

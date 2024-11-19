@@ -35,8 +35,8 @@ pillow_context = Context(
 )
 DATABASE_FILE = 'smart_retail.db'
 LOGPATH='log'
-RECORD_MODE = False #是否錄下通報前後20秒影像
-PRODUCT_WINDOW_SIZE = 30 # 時間序列長度，用來觀察物件是否穩定存在
+VISUAL = False #是否可視化AI影像
+PRODUCT_WINDOW_SIZE = 15 # 時間序列長度，用來觀察物件是否穩定存在
 PRODUCT_MIN_AVG_APPEARANCE = 0.7 # 商品出現比例閾值（小於該值會過濾）
 PRODUCT_AREA_THRES = 10000 # 物件面積閾值(小於該值會過濾)
 PRODUCT_NO_EXIST_THRES = 10 #(物件消失時間門檻值，超時就會通報)
@@ -48,5 +48,9 @@ NOT_EXIST_THRES = 10  # 物品消失的时间阈值
 GetCameraInfoENDPOINT = '192.168.1.99:18080' # 訪問獲取相機資訊服務的IP
 NotificationENDPOINT = '192.168.1.99:18080' # 訪問通報服務的IP
 
+RECORD_MODE = False #是否錄下通報前後影像
+RECORD_FPS = 10 # 紀錄事件影像的FPS
+RECORD_PRETIME = 10  # 紀錄事件發生前的秒數
+RECORD_POSTTIME = 5  # 紀錄事件發生後的秒數
 EXPERIENCE_OUTPUT_DIR = 'output/experience' # 體驗區通報事件紀錄影像的存放位置
 PROMOTION_OUTPUT_DIR = 'output/promotion' # 促銷區通報事件紀錄影像的存放位置

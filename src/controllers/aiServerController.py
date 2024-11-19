@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi import  HTTPException, Body
 from pydantic import BaseModel, Field
 from src.config.database import initialize_database
-from src.config.config import GetCameraInfoENDPOINT, RECORD_MODE
+from src.config.config import GetCameraInfoENDPOINT, RECORD_MODE, VISUAL
 from src.services.lib.loggingService import log
 from src.services.lib.threadManager import ThreadManager
 from src.services.detect.experienceAreaDetection import ExperienceAreaDetection
@@ -169,14 +169,20 @@ class AIServerAPI:
         # 提取 RTSP URL 和相機 ID
         captures = {cameraId: cv2.VideoCapture(info['meta']['rtsp_url']) for cameraId, info in experience_area_info.items()}
         while not stop_event.is_set():
+            
             for cameraId, cap in captures.items():
                 ret, frame = cap.read()
-                
+                products_of_interest = [product_dict['name'] for product_dict in experience_area_info[cameraId]['product_list']]
                 if ret:
                     log.info(f"體驗區-相機編號：{cameraId} 監控中...")
                     chairs, pillows, persons = self.experienceAreaDetection.detect(cameraId=cameraId, image=frame)
-                    self.experienceAreaDetection.process_chairs(chair_status_history=chair_status_history)
-        
+                    self.experienceAreaDetection.process_chairs(chair_status_history=chair_status_history, products_of_interest=products_of_interest)
+                    if VISUAL:
+                        self.experienceAreaDetection.visual(cameraId=cameraId, 
+                                                            image=frame, 
+                                                            pillows=pillows,
+                                                            persons=persons)
+                        
                 else:
                     log.info(f"未獲取影像，相機編號：{cameraId} 嘗試重新連接...")
                     cap.release()
@@ -200,6 +206,10 @@ class AIServerAPI:
                     ROIs_info = promotion_area_info[cameraId]['area_list']
                     object_list, persons, ROIs, interactiveAreas = self.salesAreaDetection.detect(cameraId=cameraId, 
                                                         image=frame, ROIs_info=ROIs_info, record_mode=RECORD_MODE)
+                    if VISUAL:
+                        self.salesAreaDetection.visual(cameraId=cameraId, image=frame, persons=persons)
+
+                
                 else:
                     log.info(f"未獲取影像，相機編號：{cameraId} 嘗試重新連接...")
                     cap.release()
@@ -207,10 +217,5 @@ class AIServerAPI:
                     captures[cameraId] = cap
                     
         print("線程接收到停止信號，已退出。")
-        
-        
-        
-        
-        
-        
+             
 router = AIServerAPI.router()
