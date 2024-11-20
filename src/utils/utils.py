@@ -126,4 +126,23 @@ class Utils:
         
         # 返回最小矩形的四個角座標
         return [min_x, min_y, max_x, max_y]
+    
+    def get_minimum_enclosing_bbox(self, bboxes):
+        """
+        計算包圍所有 bboxes 的最小矩形
+        
+        :param bboxes: List of bboxes, each bbox in format [x1, y1, x2, y2]
+        :return: Minimum enclosing bbox in format [x_min, y_min, x_max, y_max]
+        """
+        if not bboxes:
+            raise ValueError("The list of bboxes is empty")
+        
+        # 分別計算 x_min, y_min, x_max, y_max
+        x_min = min(bbox[0] for bbox in bboxes)
+        y_min = min(bbox[1] for bbox in bboxes)
+        x_max = max(bbox[2] for bbox in bboxes)
+        y_max = max(bbox[3] for bbox in bboxes)
+        
+        return [x_min, y_min, x_max, y_max]    
+
 utils = Utils()

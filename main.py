@@ -1,8 +1,8 @@
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
-from src.controllers import aiServerController
-
+# from src.controllers import aiServerController
+from src.api import aiServerController
 
 app = FastAPI()
 
@@ -20,5 +20,4 @@ app.add_middleware(
 app.include_router(aiServerController.router)
 # 啟動應用的方式
 if __name__ == "__main__":
-
     uvicorn.run(app, host="0.0.0.0", port=8000)

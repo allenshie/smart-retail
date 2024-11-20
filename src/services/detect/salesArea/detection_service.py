@@ -1,6 +1,8 @@
+import cv2
 import torch
 import numpy as np
 from src.dao.context import Context
+from src.utils.utils import utils
 from src.services.detect.base.baseDetection import BaseDetection
 from src.services.detect.salesArea.salesUtils import SalesUtils
 from src.services.decorator.decorator import  time_logger, postprocess_decorator
@@ -31,21 +33,11 @@ class DetectionService(BaseDetection):
         person_tensor_outputs = self.postprocess_person_output(self.person_model.detect(image=image))
         person_reid_outputs = person_reid_model.detect(data=person_tensor_outputs, image=image)
         if not self.salesUtils.being_visited(ROIs=ROIs, persons=person_tensor_outputs):
-            all_sam_outputs = []
-
-            # 處理 FastSAM 模型的每個 ROI
-            for _, ROI in ROIs.items():
-                x1, y1, x2, y2 = ROI
-                roi_image = image[y1: y2, x1:x2]
-                sam_tensor_outputs = self.sam_model.detect(image=roi_image, ori_point=[x1, y1])
-                
-                # 將 sam_tensor_outputs 添加到 all_sam_outputs 列表
-                all_sam_outputs.append(sam_tensor_outputs)
-            # 合併所有的sam tensor
-            all_sam_outputs = torch.cat(all_sam_outputs, dim=0) if all_sam_outputs else torch.empty(0)
-            all_sam_reid_outputs = sam_reid_model.detect(data=all_sam_outputs, image=image)
-            
-            all_objects = person_reid_outputs + all_sam_reid_outputs
+            x1, y1, x2, y2 = utils.get_minimum_enclosing_bbox([ROI for _, ROI in ROIs.items()])
+            roi_image = image[y1: y2, x1:x2]
+            sam_tensor_outputs = self.sam_model.detect(image=roi_image, ori_point=[x1, y1])
+            sam_reid_outputs = sam_reid_model.detect(data=sam_tensor_outputs, image=image)
+            all_objects = person_reid_outputs + sam_reid_outputs
     
         else:
             all_objects = person_reid_outputs
