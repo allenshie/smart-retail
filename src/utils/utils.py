@@ -1,4 +1,5 @@
 import numpy as np
+from typing import List, Tuple
 
 class Utils:
     def __init__(self):
@@ -30,6 +31,45 @@ class Utils:
         center1 = [(bbox1[0] + bbox1[2]) / 2, (bbox1[1] + bbox1[3]) / 2]
         center2 = [(bbox2[0] + bbox2[2]) / 2, (bbox2[1] + bbox2[3]) / 2]
         return np.sqrt((center1[0] - center2[0]) ** 2 + (center1[1] - center2[1]) ** 2)
+
+    def calculate_overlap_ratio(self, bbox1: List[float], bbox2: List[float]) -> Tuple[float, float]:
+        """
+        計算兩個邊界框的交集區域佔比
+        
+        Args:
+            bbox1 (List[float]): 第一個邊界框 [x1, y1, x2, y2]
+            bbox2 (List[float]): 第二個邊界框 [x1, y1, x2, y2]
+            
+        Returns:
+            Tuple[float, float]: (bbox1交集佔比, bbox2交集佔比)
+            例如返回 (0.8, 0.3) 表示交集區域佔bbox1面積的80%，佔bbox2面積的30%
+        """
+        # 計算交集區域
+        x1 = max(bbox1[0], bbox2[0])
+        y1 = max(bbox1[1], bbox2[1])
+        x2 = min(bbox1[2], bbox2[2])
+        y2 = min(bbox1[3], bbox2[3])
+        
+        # 如果沒有交集，返回 0
+        if x1 >= x2 or y1 >= y2:
+            return (0.0, 0.0)
+        
+        # 計算交集面積
+        intersection_area = (x2 - x1) * (y2 - y1)
+        
+        # 計算各自面積
+        bbox1_area = (bbox1[2] - bbox1[0]) * (bbox1[3] - bbox1[1])
+        bbox2_area = (bbox2[2] - bbox2[0]) * (bbox2[3] - bbox2[1])
+        
+        # 避免除以零
+        if bbox1_area == 0 or bbox2_area == 0:
+            return (0.0, 0.0)
+        
+        # 計算交集區域佔各自面積的比例
+        ratio1 = intersection_area / bbox1_area  # 交集佔bbox1的比例
+        ratio2 = intersection_area / bbox2_area  # 交集佔bbox2的比例
+        
+        return (ratio1, ratio2)
 
     def calculate_area(self, bbox):
         """

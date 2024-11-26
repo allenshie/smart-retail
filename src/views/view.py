@@ -59,13 +59,13 @@ class View:
             rectColor = (0,0,255) if info.get('notified') else (255,0,0)
             self.drawObject(image=image, object=object, rectColor=rectColor)
         
-    def visualExperienceArea(self, image: np.ndarray, pillows, chair_db, persons):
+    def visualExperienceArea(self, image: np.ndarray, pillows, chairs, persons):
         history_chairs = []
-        for chair in chair_db:
+        for chair in chairs:
             history_chairs.append({
                 "category": "chair",
                 "id": chair.chair_id,
-                "bbox": eval(chair.position),
+                "bbox": chair.position,
                 "state": chair.state,
                 "type": chair.type
             })

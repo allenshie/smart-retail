@@ -26,12 +26,12 @@ reid_context = Context(
 chair_context = Context(
     model_name='Chair',
     model_dir='weights',
-    model_file='chair_yolov8m_v0.pt'
+    model_file='chair_yolo11m_v1.pt'
 )
 pillow_context = Context(
     model_name='Pillow',
     model_dir='weights',
-    model_file='pillow_yolov8m_v1.pt'
+    model_file='pillow_yolo11s_v2.pt'
 )
 DATABASE_FILE = 'smart_retail.db'
 LOGPATH='log'
@@ -45,7 +45,7 @@ EXIT_THRESHOLD = 5  # 人员离开区域的时间阈值
 CHECK_DURATION = 5  # 检查物品消失的时间窗口
 NOT_EXIST_THRES = 10  # 物品消失的时间阈值
 
-GetCameraInfoENDPOINT = '192.168.1.99:18080' # 訪問獲取相機資訊服務的IP
+GetCameraInfoENDPOINT = '192.168.1.80:65334' # 訪問獲取相機資訊服務的IP
 NotificationENDPOINT = '192.168.1.99:18080' # 訪問通報服務的IP
 
 RECORD_MODE = False #是否錄下通報前後影像
