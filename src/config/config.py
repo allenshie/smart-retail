@@ -26,17 +26,17 @@ reid_context = Context(
 chair_context = Context(
     model_name='Chair',
     model_dir='weights',
-    model_file='chair_yolov8m_v0.pt'
+    model_file='chair_yolo11m_v1.pt'
 )
 pillow_context = Context(
     model_name='Pillow',
     model_dir='weights',
-    model_file='pillow_yolov8m_v1.pt'
+    model_file='pillow_yolo11s_v2.pt'
 )
 DATABASE_FILE = 'smart_retail.db'
 LOGPATH='log'
 VISUAL = False #是否可視化AI影像
-PRODUCT_WINDOW_SIZE = 15 # 時間序列長度，用來觀察物件是否穩定存在
+PRODUCT_WINDOW_SIZE = 20 # 時間序列長度，用來觀察物件是否穩定存在
 PRODUCT_MIN_AVG_APPEARANCE = 0.7 # 商品出現比例閾值（小於該值會過濾）
 PRODUCT_AREA_THRES = 10000 # 物件面積閾值(小於該值會過濾)
 PRODUCT_NO_EXIST_THRES = 10 #(物件消失時間門檻值，超時就會通報)
@@ -45,7 +45,7 @@ EXIT_THRESHOLD = 5  # 人员离开区域的时间阈值
 CHECK_DURATION = 5  # 检查物品消失的时间窗口
 NOT_EXIST_THRES = 10  # 物品消失的时间阈值
 
-GetCameraInfoENDPOINT = '192.168.1.99:18080' # 訪問獲取相機資訊服務的IP
+GetCameraInfoENDPOINT = '192.168.1.80:65334' # 訪問獲取相機資訊服務的IP
 NotificationENDPOINT = '192.168.1.99:18080' # 訪問通報服務的IP
 
 RECORD_MODE = False #是否錄下通報前後影像
