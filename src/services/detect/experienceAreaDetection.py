@@ -23,13 +23,7 @@ class ExperienceAreaDetection:
         )
         self.chair_manager = ChairManager(data_ttl=300)
         self.view = View()
-        self.product_dict = {
-            "hands": "product_1",
-            "pinto": "product_2", 
-            "balance_on": "product_3",
-            "cosios": "product_4",
-            "doctor_air": "product_5",
-        }
+        self.product_dict = EXPERIENCE_PRODUCT_DICT
         self.camera_contexts = dict()
         self._visualization_windows = set()
         
@@ -71,10 +65,12 @@ class ExperienceAreaDetection:
 
         
         # 更新椅子狀態並獲取狀態變更事件
-        state_events = self.chair_manager.update_chair_status(
+        state_events = self.chair_manager.update_chair_status2(
             camera_id=cameraId,
             persons=persons,
             pillows=pillows,
+            occupation_time_threshold=EXPERIENCE_TIME_THRES,
+            vacant_time_threshold=LEAVE_TIME_THRES,
             products_of_interest=products_of_interest
         )
         
@@ -86,7 +82,7 @@ class ExperienceAreaDetection:
         if VISUAL:
             self.visual(cameraId, image, pillows, persons)  
         
-        return chairs, pillows, persons
+        return chairs, pillows, persons, image
     
     def _notify_state_change(self, event: ChairStateEvent):
             """處理椅子狀態變更通知"""
@@ -97,7 +93,6 @@ class ExperienceAreaDetection:
                     'is_using': event.state_change == ChairStateChange.OCCUPIED
                 }
                 api_url = f"http://{NotificationENDPOINT}/experience-event"
-                
                 response = requests.post(api_url, json=payload)
                 if response.status_code == 200:
                     log.info(f"Successfully notified status change for camera {event.camera_id} "

@@ -31,20 +31,14 @@ class ChairInfo:
     # 新增用於追蹤椅墊配對的欄位
     temp_pillow_match: Optional[dict] = None  # 暫時的椅墊配對
     pillow_match_start_time: Optional[float] = None  # 開始配對的時間
-
+    vacant_start: float = field(default_factory=time.time)
+    
 class ChairManager:
     def __init__(self, data_ttl: int = 30):
         self._contexts: Dict[str, Dict[str, ChairInfo]] = {}
         self._lock = threading.RLock()
         self._data_ttl = data_ttl
         self._person_chair_assignments: Dict[str, Set[str]] = {}  # 記錄每個攝影機中每個人正在使用的椅子
-        self.product_dict = {
-            "hands": "product_1",
-            "pinto": "product_2", 
-            "balance_on": "product_3",
-            "cosios": "product_4",
-            "doctor_air": "product_5",
-        }
 
     def find_chair_person_relations(self, chairs: Dict[str, ChairInfo], 
                                   persons: List[dict], 
@@ -239,7 +233,139 @@ class ChairManager:
                         # 不是同一個椅墊，重置配對狀態
                         chair.temp_pillow_match = current_match
                         chair.pillow_match_start_time = current_time
+
+    def update_chair_status2(self, camera_id: str, persons: List[dict],
+                            products_of_interest: List[str],
+                            pillows: List[dict],
+                            occupation_time_threshold: float = 3.0,
+                            vacant_time_threshold: float = 2.0,
+                            chair_overlap_threshold: float = 0.6,
+                            pillow_overlap_threshold: float = 0.7
+                            ) -> List[ChairStateEvent]:
+        """
+        更新椅子使用狀態並生成事件
+        使用以人為主體的配對邏輯，確保一個人只會配對到一張椅子
+        """
+        current_time = time.time()
+        state_events = []
+        
+        def calculate_distance(point1, point2):
+            """計算兩點間的歐幾里得距離"""
+            return ((point1[0] - point2[0]) ** 2 + (point1[1] - point2[1]) ** 2) ** 0.5
+        
+        with self._lock:
+            if camera_id not in self._contexts:
+                return state_events
+
+            context = self._contexts[camera_id]
+            
+            # 建立人與椅子的配對結果字典
+            person_chair_pairs = {}
+            
+            # 對每個人進行處理
+            for person in persons:
+                person_id = person['id']
+                person_bbox = person['bbox']
+                person_bottom_right = (person_bbox[2], person_bbox[3])  # x2, y2
+                
+                # 找出所有符合條件的椅子
+                qualified_chairs = []
+                
+                for chair_id, chair in context.items():
+                    # 跳過不符合條件的椅子
+                    if not chair.matched_pillow or chair.type not in products_of_interest:
+                        continue
                     
+                    # 計算重疊
+                    chair_overlap = utils.calculate_overlap_ratio(chair.position, person_bbox)[0]
+                    if chair_overlap > chair_overlap_threshold:
+                        pillow_bbox = chair.matched_pillow['bbox']
+                        pillow_overlap = utils.calculate_overlap_ratio(pillow_bbox, person_bbox)[0]
+                        
+                        if pillow_overlap > pillow_overlap_threshold:
+                            chair_bottom_right = (chair.position[2], chair.position[3])
+                            distance = calculate_distance(person_bottom_right, chair_bottom_right)
+                            qualified_chairs.append((chair_id, chair, distance))
+                
+                # 根據符合條件的椅子數量進行處理
+                if len(qualified_chairs) == 1:
+                    # 只有一張符合條件的椅子，直接配對
+                    person_chair_pairs[person_id] = qualified_chairs[0]
+                elif len(qualified_chairs) > 1:
+                    # 多張符合條件的椅子，選擇距離最近的
+                    nearest_chair = min(qualified_chairs, key=lambda x: x[2])
+                    person_chair_pairs[person_id] = nearest_chair
+            
+            # 處理椅子狀態更新和事件生成
+            for chair_id, chair in context.items():
+                # 找出當前配對到這張椅子的人
+                current_person = None
+                for person_id, (matched_chair_id, _, _) in person_chair_pairs.items():
+                    if matched_chair_id == chair_id:
+                        current_person = next(p for p in persons if p['id'] == person_id)
+                        break
+                
+                # 更新持續時間和狀態
+                if current_person is not None:
+                    if (chair.continuous_occupation_start is None or 
+                        not chair.occupying_person or 
+                        chair.occupying_person['id'] != current_person['id']):
+                        chair.continuous_occupation_start = current_time
+                        chair.occupying_person = current_person
+                        # 重置離開時間
+                        chair.vacant_start = None
+                else:
+                    chair.continuous_occupation_start = None
+                    if chair.occupying_person is not None and chair.vacant_start is None:
+                        chair.vacant_start = current_time
+                    
+                
+                # 計算持續時間
+                occupation_duration = (current_time - chair.continuous_occupation_start 
+                                    if chair.continuous_occupation_start is not None 
+                                    else 0)
+                    
+                # 狀態轉換邏輯
+                if chair.state == 'idle':
+                    if (current_person is not None and 
+                        occupation_duration >= occupation_time_threshold):
+                        
+                        chair.state = 'in_use'
+                        chair.last_state_change = current_time
+                        
+                        state_events.append(ChairStateEvent(
+                            camera_id=camera_id,
+                            chair_id=chair_id,
+                            chair_type=chair.type,
+                            state_change=ChairStateChange.OCCUPIED,
+                            timestamp=current_time
+                        ))
+                
+                elif chair.state == 'in_use':
+                    if current_person is None and chair.vacant_start is not None:
+                        vacant_duration = current_time - chair.vacant_start
+                        if vacant_duration >= vacant_time_threshold:
+                            chair.state = 'idle'
+                            chair.last_state_change = current_time
+                            chair.occupying_person = None
+                            chair.vacant_start = None
+                            
+                            state_events.append(ChairStateEvent(
+                                camera_id=camera_id,
+                                chair_id=chair_id,
+                                chair_type=chair.type,
+                                state_change=ChairStateChange.VACANT,
+                                timestamp=current_time
+                            ))
+                elif current_person is not None:
+                    # 如果有人回來，重置離開時間
+                    chair.vacant_start = None
+        
+        
+        return state_events
+
+
+
     def update_chair_status(self, camera_id: str, persons: List[dict],
                         products_of_interest: List[str],
                         pillows: List[dict],

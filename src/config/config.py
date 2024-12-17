@@ -45,6 +45,16 @@ EXIT_THRESHOLD = 5  # 人员离开区域的时间阈值
 CHECK_DURATION = 5  # 检查物品消失的时间窗口
 NOT_EXIST_THRES = 10  # 物品消失的时间阈值
 
+EXPERIENCE_PRODUCT_DICT = {
+            # "hands": "product_1",
+            "pinto": "product_2", 
+            "balance_on": "product_3",
+            "cosios": "product_4",
+            "doctor_air": "product_5",
+        }
+EXPERIENCE_TIME_THRES = 3 # 顧客體驗座墊時間阈值
+LEAVE_TIME_THRES = 3 # 顧客離開座墊時間阈值
+
 GetCameraInfoENDPOINT = '192.168.1.80:65334' # 訪問獲取相機資訊服務的IP
 NotificationENDPOINT = '192.168.1.99:18080' # 訪問通報服務的IP
 
