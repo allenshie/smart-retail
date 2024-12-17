@@ -65,7 +65,7 @@ class ExperienceAreaDetection:
 
         
         # 更新椅子狀態並獲取狀態變更事件
-        state_events = self.chair_manager.update_chair_status2(
+        state_events = self.chair_manager.update_chair_status(
             camera_id=cameraId,
             persons=persons,
             pillows=pillows,

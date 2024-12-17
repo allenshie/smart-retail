@@ -234,7 +234,7 @@ class ChairManager:
                         chair.temp_pillow_match = current_match
                         chair.pillow_match_start_time = current_time
 
-    def update_chair_status2(self, camera_id: str, persons: List[dict],
+    def update_chair_status(self, camera_id: str, persons: List[dict],
                             products_of_interest: List[str],
                             pillows: List[dict],
                             occupation_time_threshold: float = 3.0,
@@ -362,118 +362,6 @@ class ChairManager:
                     chair.vacant_start = None
         
         
-        return state_events
-
-
-
-    def update_chair_status(self, camera_id: str, persons: List[dict],
-                        products_of_interest: List[str],
-                        pillows: List[dict],
-                        occupation_time_threshold: float = 3.0,  # 需要持續坐著的時間
-                        vacant_time_threshold: float = 2.0,      # 需要持續離開的時間
-                        chair_overlap_threshold: float = 0.6,    # 人與椅子重疊閾值
-                        pillow_overlap_threshold: float = 0.7    # 人與椅墊重疊閾值
-                        ) -> List[ChairStateEvent]:
-        """
-        更新椅子使用狀態並生成事件
-        加入持續時間判斷，避免路過的人觸發使用狀態
-        """
-        current_time = time.time()
-        state_events = []
-        
-        with self._lock:
-            if camera_id not in self._contexts:
-                return state_events
-
-            context = self._contexts[camera_id]
-            
-            # 重置人員分配
-            if camera_id not in self._person_chair_assignments:
-                self._person_chair_assignments[camera_id] = set()
-            self._person_chair_assignments[camera_id].clear()
-
-            # 檢查每個在context中的椅子
-            for chair_id, chair in context.items():
-                # 只處理有配對椅墊的椅子
-                if not chair.matched_pillow or chair.type not in products_of_interest:
-                    continue
-
-                # 尋找最大重疊的人
-                max_overlap_person = None
-                max_chair_overlap = 0
-                max_pillow_overlap = 0
-                
-                for person in persons:
-                    # 計算人與椅子的重疊
-                    chair_overlap = utils.calculate_overlap_ratio(chair.position, person['bbox'])[0]
-                    
-                    # 如果與椅子有足夠重疊，檢查與椅墊的重疊
-                    if chair_overlap > chair_overlap_threshold:
-                        pillow_bbox = chair.matched_pillow['bbox']
-                        pillow_overlap = utils.calculate_overlap_ratio(pillow_bbox, person['bbox'])[0]
-                        
-                        # 更新最大重疊的人
-                        if chair_overlap > max_chair_overlap and pillow_overlap > pillow_overlap_threshold:
-                            max_overlap_person = person
-                            max_chair_overlap = chair_overlap
-                            max_pillow_overlap = pillow_overlap
-
-                # 更新持續遮擋時間
-                if max_overlap_person is not None:
-                    # 如果是新的遮擋開始或者是不同的人
-                    if (chair.continuous_occupation_start is None or 
-                        not chair.occupying_person or 
-                        chair.occupying_person['id'] != max_overlap_person['id']):
-                        chair.continuous_occupation_start = current_time
-                        chair.occupying_person = max_overlap_person
-                else:
-                    # 如果沒有重疊的人，重置持續時間
-                    chair.continuous_occupation_start = None
-                    
-                # 計算持續時間
-                occupation_duration = (current_time - chair.continuous_occupation_start 
-                                    if chair.continuous_occupation_start is not None 
-                                    else 0)
-                # 狀態轉換邏輯
-                if chair.state == 'idle':
-                    # 從閒置到使用中的轉換
-                    if (max_overlap_person is not None and 
-                        occupation_duration >= occupation_time_threshold and
-                        max_overlap_person['id'] not in self._person_chair_assignments[camera_id]):
-                        
-                        chair.state = 'in_use'
-                        chair.last_state_change = current_time
-                        self._person_chair_assignments[camera_id].add(max_overlap_person['id'])
-                        
-                        state_events.append(ChairStateEvent(
-                            camera_id=camera_id,
-                            chair_id=chair_id,
-                            chair_type=chair.type,
-                            state_change=ChairStateChange.OCCUPIED,
-                            timestamp=current_time
-                        ))
-                
-                elif chair.state == 'in_use':
-                    # 從使用中到閒置的轉換
-                    if max_overlap_person is None:
-                        # 計算空置時間
-                        vacant_duration = current_time - chair.last_state_change
-                        if vacant_duration >= vacant_time_threshold:
-                            chair.state = 'idle'
-                            chair.last_state_change = current_time
-                            chair.occupying_person = None
-                            
-                            state_events.append(ChairStateEvent(
-                                camera_id=camera_id,
-                                chair_id=chair_id,
-                                chair_type=chair.type,
-                                state_change=ChairStateChange.VACANT,
-                                timestamp=current_time
-                            ))
-                    elif chair.occupying_person and max_overlap_person['id'] != chair.occupying_person['id']:
-                        # 如果是不同的人，保持原狀態直到確認原使用者真的離開
-                        pass
-
         return state_events
 
     def check_chair_overlaps(self, chair_position: List[float], 
