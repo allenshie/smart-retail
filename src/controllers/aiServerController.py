@@ -157,8 +157,6 @@ class AIServerAPI:
             raise HTTPException(status_code=400, detail="Invalid action")
         
     def experienceArea_task(self, stop_event):
-        chair_status_history = {}
-
         # 使用 fetch_camera_area 獲取相機資訊
         experience_area_info = fetch_camera_area(type='experience')  # 獲取體驗區相機資訊
 
@@ -175,14 +173,8 @@ class AIServerAPI:
                 products_of_interest = [product_dict['name'] for product_dict in experience_area_info[cameraId]['product_list']]
                 if ret:
                     log.info(f"體驗區-相機編號：{cameraId} 監控中...")
-                    chairs, pillows, persons = self.experienceAreaDetection.detect(cameraId=cameraId, image=frame)
-                    self.experienceAreaDetection.process_chairs(chair_status_history=chair_status_history, products_of_interest=products_of_interest)
-                    if VISUAL:
-                        self.experienceAreaDetection.visual(cameraId=cameraId, 
-                                                            image=frame, 
-                                                            pillows=pillows,
-                                                            persons=persons)
-                        
+                    chairs, pillows, persons, image = self.experienceAreaDetection.detect(cameraId=cameraId, image=frame, products_of_interest=products_of_interest)
+
                 else:
                     log.info(f"未獲取影像，相機編號：{cameraId} 嘗試重新連接...")
                     cap.release()
@@ -193,10 +185,13 @@ class AIServerAPI:
     
     def salesArea_task(self, stop_event):
         promotion_area_info = fetch_camera_area(type='promotion')  # 獲取促銷區相機資訊
+        
         if not promotion_area_info:
             print("未能獲取促銷區相機資訊，請檢查服務狀態。")
             return
+        
         captures = {cameraId: cv2.VideoCapture(info['meta']['rtsp_url']) for cameraId, info in promotion_area_info.items()}
+        
         while not stop_event.is_set():
             for cameraId, cap in captures.items():
                 ret, frame = cap.read()
@@ -209,7 +204,6 @@ class AIServerAPI:
                     if VISUAL:
                         self.salesAreaDetection.visual(cameraId=cameraId, image=frame, persons=persons)
 
-                
                 else:
                     log.info(f"未獲取影像，相機編號：{cameraId} 嘗試重新連接...")
                     cap.release()
