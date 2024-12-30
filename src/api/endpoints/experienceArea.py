@@ -95,19 +95,11 @@ class ExperienceAreaHandler:
                             products_of_interest = frame_data.metadata.get('product_list', [])
                             products_of_interest = [p['name'] for p in products_of_interest]
 
-                            chairs, pillows, persons = detector.detect(
+                            chairs, pillows, persons, image = detector.detect(
                                 cameraId=frame_data.camera_id,
                                 image=frame_data.image,
                                 products_of_interest=products_of_interest
                             )
-
-                            if VISUAL and not (stop_event.is_set() or shutdown_event.is_set()):
-                                detector.visual(
-                                    cameraId=frame_data.camera_id,
-                                    image=frame_data.image,
-                                    pillows=pillows,
-                                    persons=persons
-                                )
 
                         except queue.Empty:
                             continue
