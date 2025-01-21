@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 from typing import List, Tuple
 
@@ -184,5 +185,59 @@ class Utils:
         y_max = max(bbox[3] for bbox in bboxes)
         
         return [x_min, y_min, x_max, y_max]    
+
+    def compare_masks(self, mask1, mask2):
+        def iou(mask1, mask2):
+            """计算交并比（IoU）"""
+            intersection = np.logical_and(mask1, mask2)
+            union = np.logical_or(mask1, mask2)
+            if np.sum(union) == 0:
+                return 0  # 避免除零错误
+            return np.sum(intersection) / np.sum(union)
+
+        def contour_similarity(mask1, mask2):
+            """计算轮廓匹配相似度"""
+            contours1, _ = cv2.findContours(mask1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours2, _ = cv2.findContours(mask2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if len(contours1) == 0 or len(contours2) == 0:
+                return 0  # 无有效轮廓时，返回 0 相似度
+            try:
+                similarity = cv2.matchShapes(contours1[0], contours2[0], cv2.CONTOURS_MATCH_I1, 0.0)
+                return max(0, 1 - similarity)  # 确保相似度在 [0, 1] 范围内
+            except Exception as e:
+                self.log.error(f"Error in contour similarity calculation: {e}")
+                return 0
+
+        def phash(mask):
+            """计算感知哈希值（pHash）"""
+            resized = cv2.resize(mask, (32, 32), interpolation=cv2.INTER_AREA)
+            dct = cv2.dct(np.float32(resized))
+            dct_low_freq = dct[:8, :8]
+            mean_val = np.mean(dct_low_freq[1:])
+            hash_bits = (dct_low_freq > mean_val).flatten()
+            return ''.join(['1' if bit else '0' for bit in hash_bits])
+
+        def phash_similarity(mask1, mask2):
+            """计算两个 pHash 的相似度"""
+            try:
+                hash1 = phash(mask1)
+                hash2 = phash(mask2)
+                return 1 - sum(c1 != c2 for c1, c2 in zip(hash1, hash2)) / len(hash1)
+            except Exception as e:
+                self.log.error(f"Error in pHash similarity calculation: {e}")
+                return 0
+
+        """整合多种相似度计算方法"""
+        results = {
+            'IoU': iou(mask1, mask2),
+            'Contour Similarity': contour_similarity(mask1, mask2),
+            'pHash Similarity': phash_similarity(mask1, mask2)
+        }
+
+        # 过滤异常值并计算平均值
+        similar_list = [max(0, min(1, v)) for v in results.values()]  # 确保值在 [0, 1] 范围内
+        mean_similarity = sum(similar_list) / len(similar_list)
+        return mean_similarity
+
 
 utils = Utils()

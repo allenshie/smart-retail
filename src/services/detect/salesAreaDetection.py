@@ -20,6 +20,7 @@ class SalesAreaDetection:
         self.view = View()
         self.detection_service = DetectionService(
             fastsam_context=fastsam_context,
+            mobilesam_context=mobilesam_context,
             person_context=person_context,
             reid_context=reid_context
         )
@@ -64,8 +65,13 @@ class SalesAreaDetection:
         
         if len(camera_context.objects_dict) > 0:
             for area_id, roi in ROIs.items():
-                self.roi_monitor(cameraId=cameraId, area_id=area_id, roi_bbox=roi, 
-                                persons=persons, objects_dict=camera_context.objects_dict, record_mode=record_mode)
+                self.roi_monitor(cameraId=cameraId, 
+                                area_id=area_id, 
+                                roi_bbox=roi, 
+                                persons=persons, 
+                                current_frame = image,
+                                objects_dict=camera_context.objects_dict, 
+                                record_mode=record_mode)
             # self.check_ROI_missing_product(cameraId=cameraId, area_id=area_id, roi=roi, persons=persons)
         if record_mode:
             zones = [roi for _, roi in ROIs.items()]
@@ -74,24 +80,29 @@ class SalesAreaDetection:
                                       )
             recording_service.buffer_frame(image) if not recording_service.is_recording else recording_service.record_frame(image)
             
+        if VISUAL:
+            self.visual(cameraId=cameraId, image=image, persons=persons)    
+        
         return  camera_context.objects_dict, persons, ROIs, self.max_area_bboxs_dict.get(cameraId, [])
         
-    def roi_monitor(self, cameraId: str, area_id: str, roi_bbox: list, persons: list, objects_dict: dict, record_mode: bool):
+    def roi_monitor(self, cameraId: str, area_id: str, roi_bbox: list, persons: list, current_frame:np.ndarray, objects_dict: dict, record_mode: bool):
         id = f"{cameraId}_{area_id}"
         if id not in self.roi_monitor_dict:
             self.roi_monitor_dict.update({
-                id: AreaInteractionMonitor(area_bbox=roi_bbox)
+                id: AreaInteractionMonitor(area_bbox=roi_bbox, mobilesam_model=self.detection_service.mobilesam_model)
             })
         roi_monitor_instance = self.roi_monitor_dict[id]
         max_area_bboxs = roi_monitor_instance.process_person(persons=persons)
         self.max_area_bboxs_dict[cameraId] = max_area_bboxs
-        roi_monitor_instance.monitor_area_interaction(persons=persons)
+        roi_monitor_instance.monitor_area_interaction(persons=persons, current_frame=current_frame)
         
         # 检查物品丢失并启动录制
         if roi_monitor_instance.update_objects(camera_id=cameraId,
                                                area_id=area_id,
                                                current_time=time.time(),
-                                               objects_dict=objects_dict):
+                                               objects_dict=objects_dict,
+                                               current_frame=current_frame,
+                                               ):
             if record_mode:
                 recording_service = self.get_recording_service(cameraId=cameraId)
                 recording_service.start_recording(cameraId)
@@ -100,7 +111,8 @@ class SalesAreaDetection:
         camera_context = self.get_camera_context(cameraId=cameraId)
         ROIs = camera_context.roi_info_dict
         zones = [roi for _, roi in ROIs.items()]
-        self.view.visualSalesArea(image=image, persons=persons, objects_dict=camera_context.objects_dict,
+        image_C = image.copy()
+        self.view.visualSalesArea(image=image_C, persons=persons, objects_dict=camera_context.objects_dict,
                                     zones=zones, interactiveAreas=self.max_area_bboxs_dict.get(cameraId, [])
                                     )
-        cv2.imshow(cameraId, cv2.resize(image, (1440, 960))); cv2.waitKey(1)
+        cv2.imshow(cameraId, cv2.resize(image_C, (1440, 960))); cv2.waitKey(1)

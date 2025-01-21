@@ -49,7 +49,7 @@ class View:
             cv2.rectangle(image, zone[:2], zone[2:], (233, 189, 222), 3)
         
         for interactiveArea in interactiveAreas:
-            cv2.rectangle(image, interactiveArea[:2], interactiveArea[2:], (0, 69, 255), 3)
+            cv2.rectangle(image, interactiveArea[:2], interactiveArea[2:], (0, 69, 255), 5)
 
         for person in persons:
             self.drawObject(image=image, object=person, rectColor=(0,188,0))

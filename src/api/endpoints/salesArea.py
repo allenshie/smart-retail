@@ -35,18 +35,7 @@ class SalesAreaHandler:
             camera_manager = CameraManager(buffer_size=30)
             frame_queue = queue.Queue(maxsize=30)
             shutdown_event = threading.Event()
-            recording_services = {}
 
-            def get_recording_service(camera_id: str):
-                if camera_id not in recording_services:
-                    recording_services[camera_id] = RecordingService(
-                        fps=RECORD_FPS,
-                        pre_seconds=RECORD_PRETIME,
-                        post_seconds=RECORD_POSTTIME,
-                        output_dir=PROMOTION_OUTPUT_DIR
-                    )
-                return recording_services[camera_id]
-            
             # 設置信號處理
             def signal_handler(signum, frame):
                 log.info(f"收到信號 {signum}，開始清理資源...")
@@ -113,20 +102,6 @@ class SalesAreaHandler:
                                 record_mode=RECORD_MODE
                             )
 
-                            if RECORD_MODE:
-                                recording_service = get_recording_service(frame_data.camera_id)
-                                if not recording_service.is_recording:
-                                    recording_service.buffer_frame(frame_data.image)
-                                else:
-                                    recording_service.record_frame(frame_data.image)
-
-                            if VISUAL and not (stop_event.is_set() or shutdown_event.is_set()):
-                                detector.visual(
-                                    cameraId=frame_data.camera_id,
-                                    image=frame_data.image,
-                                    persons=persons
-                                )
-
                         except queue.Empty:
                             continue
                         except Exception as e:
@@ -157,14 +132,6 @@ class SalesAreaHandler:
                         camera_manager.stop_capture()
                     except Exception as e:
                         log.error(f"停止相機串流時發生錯誤: {str(e)}")
-                
-                # 清理錄影服務
-                for camera_id, recording_service in recording_services.items():
-                    try:
-                        log.info(f"正在停止攝像頭 {camera_id} 的錄影服務...")
-                        recording_service.stop_recording()
-                    except Exception as e:
-                        log.error(f"停止錄影服務時發生錯誤: {str(e)}")
                 
                 while not frame_queue.empty():
                     try:

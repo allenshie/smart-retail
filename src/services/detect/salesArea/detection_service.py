@@ -9,15 +9,18 @@ from src.services.decorator.decorator import  time_logger, postprocess_decorator
 from src.services.models.person_pose import PersonPose
 from src.services.models.object_detect import ObjectDetect
 from src.services.models.fastsam import Sam
+from src.services.models.mobilesam import MobileSAM
 from src.services.models.reId import ReID
 
 class DetectionService(BaseDetection):
     def __init__(self, 
                 fastsam_context: Context,
+                mobilesam_context: Context,
                 person_context: Context, 
                 reid_context: Context):
         self.reid_context = reid_context
         self.sam_model = self._create_model(model_class=Sam, context=fastsam_context)
+        self.mobilesam_model = self._create_model(model_class=MobileSAM, context=mobilesam_context)
         self.person_model = self._create_model(model_class=ObjectDetect, context=person_context)
         self.reid_model_dict = dict()
         self.salesUtils = SalesUtils()
